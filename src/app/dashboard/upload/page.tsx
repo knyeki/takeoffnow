@@ -50,7 +50,8 @@ export default function UploadPage() {
       // 1. Upload PDF to Supabase Storage (unique path per upload)
       setStatus("Uploading PDF...");
       const timestamp = Date.now();
-      const storagePath = `${user.id}/${timestamp}_${file.name}`;
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const storagePath = `${user.id}/${timestamp}_${safeName}`;
       const { error: uploadError } = await supabase.storage
         .from("uploads")
         .upload(storagePath, file);
