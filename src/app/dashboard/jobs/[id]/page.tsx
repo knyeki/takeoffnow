@@ -103,7 +103,7 @@ export default function JobDetailPage() {
     try {
       const { data, error } = await supabase.storage
         .from(bucket)
-        .createSignedUrl(path, 300); // 5 min expiry
+        .createSignedUrl(path, 300, { download: filename });
 
       if (error || !data?.signedUrl) {
         alert("Failed to generate download link. Please try again.");
@@ -143,6 +143,51 @@ export default function JobDetailPage() {
 
   const isActive = job.status === "pending" || job.status === "processing";
 
+  // Stage descriptions for better UX while waiting
+  const STAGE_INFO: Record<string, { label: string; detail: string }> = {
+    "Stage 0": {
+      label: "Ingesting PDF",
+      detail: "Splitting pages, extracting text layers, and preparing images for analysis",
+    },
+    "Stage 1": {
+      label: "Classifying Pages",
+      detail: "AI is identifying which pages contain glazing-relevant details",
+    },
+    "Stage 2": {
+      label: "Extracting Glazing Items",
+      detail: "Reading each relevant page for storefront, curtain wall, doors, showers, mirrors, and more",
+    },
+    "Stage 3": {
+      label: "Building Takeoff",
+      detail: "Compiling quantities, dimensions, and specs into the takeoff workbook",
+    },
+    "Stage 4": {
+      label: "Generating Deliverables",
+      detail: "Creating the Excel workbook, marked-up PDF, and RFI summary",
+    },
+    "Stage 5": {
+      label: "Finalizing",
+      detail: "Uploading deliverables and completing the job",
+    },
+  };
+
+  function getStageInfo(stage: string | null) {
+    if (!stage) return { label: "Initializing...", detail: "Setting up the pipeline" };
+    // Match "Stage 0", "Stage 1", etc. from the current_stage value
+    const match = stage.match(/Stage \d+/i);
+    const key = match ? match[0] : stage;
+    return STAGE_INFO[key] || { label: stage, detail: "Processing your plans" };
+  }
+
+  const stageInfo = getStageInfo(job.current_stage);
+
+  // Calculate elapsed time
+  const elapsed = job.started_at
+    ? Math.floor((Date.now() - new Date(job.started_at).getTime()) / 1000)
+    : 0;
+  const elapsedMin = Math.floor(elapsed / 60);
+  const elapsedSec = elapsed % 60;
+
   return (
     <div className="mx-auto max-w-3xl">
       {/* Header */}
@@ -162,23 +207,31 @@ export default function JobDetailPage() {
       {/* Progress section */}
       {isActive && (
         <div className="mb-8 rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm font-medium text-zinc-300">
-              {job.current_stage || "Initializing..."}
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-sm font-semibold text-white">
+              {stageInfo.label}
             </span>
             <span className="text-sm font-semibold text-blue-400">
               {job.progress}%
             </span>
           </div>
+          <p className="mb-3 text-xs text-zinc-400">{stageInfo.detail}</p>
           <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
             <div
-              className="h-full rounded-full bg-blue-500 transition-all duration-500 ease-out"
+              className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-500 ease-out"
               style={{ width: `${job.progress}%` }}
             />
           </div>
-          <div className="mt-3 flex items-center gap-2 text-xs text-zinc-500">
-            <div className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
-            Pipeline is running — this page updates automatically
+          <div className="mt-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-zinc-500">
+              <div className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
+              Pipeline is running — updates every 5 seconds
+            </div>
+            {elapsed > 0 && (
+              <span className="text-xs text-zinc-500">
+                {elapsedMin}:{elapsedSec.toString().padStart(2, "0")} elapsed
+              </span>
+            )}
           </div>
         </div>
       )}
