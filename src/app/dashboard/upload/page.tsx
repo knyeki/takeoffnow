@@ -47,12 +47,13 @@ export default function UploadPage() {
     setError("");
 
     try {
-      // 1. Upload PDF to Supabase Storage
+      // 1. Upload PDF to Supabase Storage (unique path per upload)
       setStatus("Uploading PDF...");
-      const storagePath = `${user.id}/${file.name}`;
+      const timestamp = Date.now();
+      const storagePath = `${user.id}/${timestamp}_${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from("uploads")
-        .upload(storagePath, file, { upsert: true });
+        .upload(storagePath, file);
 
       if (uploadError) {
         throw new Error(`Upload failed: ${uploadError.message}`);
