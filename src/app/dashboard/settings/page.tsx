@@ -24,22 +24,44 @@ export default function SettingsPage() {
     setError("");
     setSaved(false);
 
-    const { error: upsertError } = await supabase.from("profiles").upsert({
-      id: user.id,
-      company_name: companyName.trim(),
-    });
+    try {
+      // Try insert first, fall back to update if profile already exists
+      const { error: insertError } = await supabase.from("profiles").insert({
+        id: user.id,
+        company_name: companyName.trim(),
+      });
 
-    setLoading(false);
+      if (insertError) {
+        if (insertError.code === "23505") {
+          // Duplicate key — profile exists, update instead
+          const { error: updateError } = await supabase
+            .from("profiles")
+            .update({ company_name: companyName.trim() })
+            .eq("id", user.id);
 
-    if (upsertError) {
-      console.error("Supabase upsert error:", upsertError);
-      setError(`Failed to save: ${upsertError.message} (${upsertError.code})`);
-      return;
+          if (updateError) {
+            console.error("Supabase update error:", updateError);
+            setError(`Failed to save: ${updateError.message} (${updateError.code})`);
+            setLoading(false);
+            return;
+          }
+        } else {
+          console.error("Supabase insert error:", insertError);
+          setError(`Failed to save: ${insertError.message} (${insertError.code})`);
+          setLoading(false);
+          return;
+        }
+      }
+
+      await refreshProfile();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      setError(`Unexpected error: ${err}`);
     }
 
-    await refreshProfile();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setLoading(false);
   }
 
   return (
