@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 
 export default function UploadPage() {
-  const { supabase, user } = useAuth();
+  const { supabase, user, profile } = useAuth();
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [projectName, setProjectName] = useState("");
@@ -90,6 +90,7 @@ export default function UploadPage() {
           body: JSON.stringify({
             job_id: job.id,
             pdf_storage_path: storagePath,
+            company_name: profile?.company_name || null,
           }),
         }
       );
