@@ -19,7 +19,7 @@ export default function OnboardingPage() {
     setError("");
 
     try {
-      // Try insert first, fall back to update if profile already exists
+      // Try insert first, fall back to update if profile exists
       const { error: insertError } = await supabase.from("profiles").insert({
         id: user.id,
         company_name: companyName.trim(),
