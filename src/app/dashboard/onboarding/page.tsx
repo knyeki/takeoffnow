@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 
 export default function OnboardingPage() {
-  const { supabase, user } = useAuth();
+  const { supabase, user, refreshProfile } = useAuth();
   const router = useRouter();
   const [companyName, setCompanyName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -47,6 +47,7 @@ export default function OnboardingPage() {
         }
       }
 
+      await refreshProfile();
       router.push("/dashboard");
     } catch (err) {
       console.error("Unexpected error:", err);
