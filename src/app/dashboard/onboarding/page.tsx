@@ -18,6 +18,14 @@ export default function OnboardingPage() {
     setLoading(true);
     setError("");
 
+    // Verify we have an active session
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setError("No active session. Please log out and log back in.");
+      setLoading(false);
+      return;
+    }
+
     const { error: upsertError } = await supabase.from("profiles").upsert({
       id: user.id,
       company_name: companyName.trim(),
