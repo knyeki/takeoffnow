@@ -24,7 +24,8 @@ export default function OnboardingPage() {
     });
 
     if (upsertError) {
-      setError("Failed to save. Please try again.");
+      console.error("Supabase upsert error:", upsertError);
+      setError(`Failed to save: ${upsertError.message} (${upsertError.code})`);
       setLoading(false);
       return;
     }

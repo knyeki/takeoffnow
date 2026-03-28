@@ -32,7 +32,8 @@ export default function SettingsPage() {
     setLoading(false);
 
     if (upsertError) {
-      setError("Failed to save. Please try again.");
+      console.error("Supabase upsert error:", upsertError);
+      setError(`Failed to save: ${upsertError.message} (${upsertError.code})`);
       return;
     }
 
